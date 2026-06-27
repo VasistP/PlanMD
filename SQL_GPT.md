@@ -25,4 +25,3 @@ A reasonable minimal stack: FastAPI for the upload and query endpoints, DuckDB f
 
 One thing to decide based on your query patterns: whether Ollama emits **raw SQL** (flexible, handles open-ended questions, needs the validation layer) or **structured query params** that your code compiles into SQL (safer, fewer hallucinations, but only covers query shapes you anticipated). For exploratory "ask anything" usage the raw-SQL route is worth the validation cost; for a fixed set of question types the structured route is more robust.
 
-Want me to turn this into a written HLD document, or drop down a level into the actual FastAPI endpoint contracts and the ingestion/query code?
