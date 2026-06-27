@@ -1,4 +1,9 @@
-This is a clean text-to-SQL-over-local-files architecture, and it maps well to a diagram. Let me sketch it.Here's the high-level design. I'll show it in two views: the overall architecture (the two pipelines and how they share storage), then a zoom into the query execution loop, since that's where the Ollama calls actually happen.The two pipelines run at different times and only touch through storage. The write path normalizes files once; the read path never sees raw rows. The orchestrator is the brain — it holds the schema, talks to Ollama for SQL, and runs that SQL through DuckDB. The color coding: purple is the LLM (Ollama), teal is the deterministic data and query engine, gray is I/O and coordination.
+This is a clean text-to-SQL-over-local-files architecture, and it maps well to a diagram. Let me sketch it.Here's the high-level design. I'll show it in two views: the overall architecture (the two pipelines and how they share storage), then a zoom into the query execution loop, since that's where the Ollama calls actually happen.
+
+<img width="1440" height="832" alt="image" src="https://github.com/user-attachments/assets/aa8ba80e-34d1-42d8-ab42-291943df2fc3" />
+
+
+The two pipelines run at different times and only touch through storage. The write path normalizes files once; the read path never sees raw rows. The orchestrator is the brain — it holds the schema, talks to Ollama for SQL, and runs that SQL through DuckDB. The color coding: purple is the LLM (Ollama), teal is the deterministic data and query engine, gray is I/O and coordination.
 
 Here's what each component is responsible for:
 
@@ -9,6 +14,8 @@ Here's what each component is responsible for:
 - **DuckDB** — does the actual filtering, joining on your common keys, and aggregation. This is the part that must be deterministic; the LLM never computes over rows itself.
 
 Now the query execution loop in detail — this is the sequence the orchestrator runs for every question:Two design points worth deciding early, since they shape the whole build:
+
+<img width="1440" height="1136" alt="image" src="https://github.com/user-attachments/assets/c253c8c4-6484-4c06-99e5-0e3b1880392b" />
 
 The **validate step** is not optional. A local model will occasionally emit a hallucinated column, a write statement, or malformed SQL. Before executing, parse the SQL and check that every referenced table and column exists in the catalog, and reject anything that isn't a `SELECT`. DuckDB also supports read-only connections, so you get a second layer of safety for free. This catches most failure modes before they hit the engine; on a validation failure you can loop the error back to Ollama for one retry.
 
